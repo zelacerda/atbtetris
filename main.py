@@ -10,7 +10,6 @@ TILE_WIDTH = 2
 KEY_DOWN, KEY_UP, KEY_LEFT, KEY_RIGHT = 258, 259, 260, 261
 DIRS = {
     KEY_DOWN: (0, 1),
-    KEY_UP: (0, -1),
     KEY_LEFT: (-1, 0),
     KEY_RIGHT: (1, 0)
 }
@@ -43,19 +42,43 @@ def get_piece():
     return random.choice(types)
 
 
+def draw_box(win, x, y, width, height):
+    borders = "██▄▀"
+    win.addstr(y, x, borders[2])
+    win.addstr(y, x+width-1, borders[2])
+    win.addstr(y+height-1, x, borders[3])
+    win.addstr(y+height-1, x+width-1, borders[3])
+    for l in range(1, height-1):
+        win.addstr(y+l, x, borders[0])
+        win.addstr(y+l, x+width-1, borders[1])
+    for c in range(1, width-1):
+        win.addstr(y, x+c, borders[2])
+        win.addstr(y+height-1, x+c, borders[3])
+
 class Game:
     def __init__(self, win):
         self.win = win
         self.area = curses.newpad(HEIGHT, WIDTH*TILE_WIDTH+1)
         self.area.bkgd(" ", colors.GRAY)
+        self.draw_border()
         self.t = 0
-        self.init_tile()
         self.board = [[0 for _ in range(WIDTH)] for _ in range(HEIGHT)]
+        self.init_tile()
 
     def init_tile(self):
         self.x = 4
         self.y = 1
         self.tile = get_piece()
+        self.move_tile(KEY_DOWN)
+
+    def draw_border(self):
+        draw_box(
+            self.win,
+            X_AREA-1,
+            Y_AREA-1,
+            WIDTH*TILE_WIDTH+TILE_WIDTH,
+            HEIGHT
+        )
 
     def draw_board(self):
         for l in range(2, HEIGHT):
@@ -65,25 +88,15 @@ class Game:
                         l, c*TILE_WIDTH, SQ,
                         colors.get_piece_color(self.board[l][c]))
 
-    def run(self):
-        now = time.perf_counter()
-        while True:
-            key = self.win.getch()
-            if key != -1:
-                self.process(key)
-
-            tick = time.perf_counter()
-            if tick - now > 1 / FREQ:
-                now = tick
-                self.t += 1
-                self.update()
 
     def process(self, key):
         if key == ord("q"): # Quit
             exit()
+        elif key == KEY_UP: # Hard drop
+            self.hard_drop()
         elif key == ord(" "): # Rotate
             self.rotate_tile()
-        elif key in [KEY_DOWN, KEY_UP, KEY_LEFT, KEY_RIGHT]:
+        elif key in [KEY_DOWN, KEY_LEFT, KEY_RIGHT]:
             self.move_tile(key)
 
     def check_new_pos(self, x, y):
@@ -101,6 +114,11 @@ class Game:
                 return False
         self.x += DIRS[key][0]
         self.y += DIRS[key][1]
+        return True
+
+    def hard_drop(self):
+        while self.move_tile(KEY_DOWN):
+            pass
 
     def rotate_tile(self):
         for part in self.tile["pos"]:
@@ -134,18 +152,37 @@ class Game:
                 self.update_board()
 
     def update(self):
-        if self.t % 20 == 0:
+        if self.t % 10 == 0:
             check = self.move_tile(KEY_DOWN)
             if check is False:
-                self.add_tile_to_board()
-                self.update_board()
-                self.init_tile()
-        self.win.addstr(0, 34, f"({self.x:02},{self.y:02}) t={int(self.t / 60)}")
+                if self.y == 1:
+                    exit()
+                else:
+                    self.add_tile_to_board()
+                    self.update_board()
+                    self.init_tile()
+        #self.win.addstr(0, 34, f"({self.x:02},{self.y:02}) t={int(self.t / 60)}")
         self.area.erase()
         self.draw_board()
         self.draw_tile()
-        self.area.refresh(2, 0, Y_AREA, X_AREA, HEIGHT+Y_AREA, WIDTH*TILE_WIDTH+X_AREA-1)
+        self.area.refresh(
+            2, 0, Y_AREA, X_AREA,
+            HEIGHT+Y_AREA, WIDTH*TILE_WIDTH+X_AREA-1)
 
+
+    def run(self):
+        now = time.perf_counter()
+        while True:
+            key = self.win.getch()
+            if key != -1:
+                self.process(key)
+
+            tick = time.perf_counter()
+            if tick - now > 1 / FREQ:
+                now = tick
+                self.t += 1
+                self.update()
+            time.sleep(0.01)
 
 
 def main(win):
