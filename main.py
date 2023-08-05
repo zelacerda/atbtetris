@@ -62,7 +62,7 @@ class Game:
         self.area.bkgd(" ", colors.GRAY)
         self.draw_border()
         self.t = 0
-        self.board = [[0 for _ in range(WIDTH)] for _ in range(HEIGHT)]
+        self.matrix = [[0 for _ in range(WIDTH)] for _ in range(HEIGHT)]
         self.init_tile()
 
     def init_tile(self):
@@ -80,13 +80,13 @@ class Game:
             HEIGHT
         )
 
-    def draw_board(self):
+    def draw_matrix(self):
         for l in range(2, HEIGHT):
             for c in range(WIDTH):
-                if self.board[l][c] != 0:
+                if self.matrix[l][c] != 0:
                     self.area.addstr(
                         l, c*TILE_WIDTH, SQ,
-                        colors.get_piece_color(self.board[l][c]))
+                        colors.get_piece_color(self.matrix[l][c]))
 
 
     def process(self, key):
@@ -102,7 +102,7 @@ class Game:
     def check_new_pos(self, x, y):
         if x < 0 or x > WIDTH-1 or y < 0 or y > HEIGHT-1:
             return False
-        if self.board[y][x] != 0:
+        if self.matrix[y][x] != 0:
             return False
         return True
 
@@ -138,18 +138,18 @@ class Game:
             self.area.addstr(y, x*TILE_WIDTH, SQ,
                              colors.get_piece_color(self.tile["type"]))
 
-    def add_tile_to_board(self):
+    def add_tile_to_matrix(self):
         for part in self.tile["pos"]:
-            self.board[self.y + part[1]][self.x + part[0]] = self.tile["type"]
+            self.matrix[self.y + part[1]][self.x + part[0]] = self.tile["type"]
 
-    def update_board(self):
-        for i, l in enumerate(self.board):
+    def update_matrix(self):
+        for i, l in enumerate(self.matrix):
             counts = [c for c in l if c != 0]
             if len(counts) == 10: # Full line
-                self.board.pop(i)
+                self.matrix.pop(i)
                 zeros = [0 for _ in range(WIDTH)]
-                self.board = [zeros] + self.board
-                self.update_board()
+                self.matrix = [zeros] + self.matrix
+                self.update_matrix()
 
     def update(self):
         if self.t % 10 == 0:
@@ -158,12 +158,12 @@ class Game:
                 if self.y == 1:
                     exit()
                 else:
-                    self.add_tile_to_board()
-                    self.update_board()
+                    self.add_tile_to_matrix()
+                    self.update_matrix()
                     self.init_tile()
         #self.win.addstr(0, 34, f"({self.x:02},{self.y:02}) t={int(self.t / 60)}")
         self.area.erase()
-        self.draw_board()
+        self.draw_matrix()
         self.draw_tile()
         self.area.refresh(
             2, 0, Y_AREA, X_AREA,
