@@ -237,7 +237,7 @@ class Game:
             if counts == 10: # Full line
                 to_remove.append(i)
         if len(to_remove) > 0:
-            self.points += POINTS[len(to_remove)] * self.level
+            self.points += POINTS[len(to_remove) - 1] * self.level
             self.matrix = remove_lines(self.matrix, to_remove)
             self.lines += len(to_remove)
             if self.lines >= UP_LVL[self.level - 1]:
