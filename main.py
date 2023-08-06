@@ -23,6 +23,11 @@ SPEEDS = [100, 79, 62, 47, 36, 26, 19, 14, 9, 6]
 UP_LVL = [10, 25, 45, 70, 100, 135, 175, 220, 270]
 POINTS = [100, 300, 500, 800]
 
+# Game states
+START = 0
+RUNNING = 1
+GAME_OVER = 2
+
 def setup(win):
     global colors, MAX_COLS, MAX_LINES
     MAX_COLS = curses.COLS - 3
@@ -80,23 +85,64 @@ class Queue:
         tetrimino = deepcopy(self.TYPES[tetrimino_type])
         return tetrimino
 
+    def get_tetrimino(self, pos):
+        tetrimino_type = self.queue[pos]
+        tetrimino = deepcopy(self.TYPES[tetrimino_type])
+        return tetrimino
+
 
 class Game:
     def __init__(self, win):
         self.win = win
+        self.game_state = START
+
+    def welcome(self):
+        self.win.erase()
+        self.win.nodelay(False)
+        self.win.addstr( 8, 28, "        atbtetris       ")
+        self.win.addstr(10, 28, " Another Terminal-Based ")
+        self.win.addstr(11, 28, "       Tetris Game      ")
+        self.win.addstr(13, 28, "v0.9 (2023) by zelacerda")
+        self.win.addstr(15, 28, "    0-9:Level q:Quit    ")
+        key = self.win.getch()
+        if 49 <= key <= 57: # 1 to 9
+            self.win.erase()
+            self.win.nodelay(True)
+            self.start(level=key - 48)
+        elif key in [ord("q"), ord("Q")]:
+            exit()
+
+    def start(self, level=5):
         self.area = curses.newpad(HEIGHT, WIDTH*TILE_WIDTH+1)
         self.info = curses.newpad(HEIGHT, 20)
         self.queue = Queue()
-        self.queue_area = curses.newpad(15, 10)
+        self.queue_area = curses.newpad(15, 11)
+        self.queue_area.bkgd(" ", colors.GRAY)
         self.area.bkgd(" ", colors.GRAY)
         self.draw_matrix_border()
         self.draw_queue_border()
         self.time = 0
         self.points = 0
-        self.level = 5
+        self.game_state = RUNNING
+        self.level = level
         self.lines = 0
         self.matrix = [[0 for _ in range(WIDTH)] for _ in range(HEIGHT)]
         self.init_tile()
+
+    def game_over(self):
+        self.win.nodelay(False)
+        self.win.addstr( 9, 30, "                    ")
+        self.win.addstr(10, 30, "     GAME OVER!     ")
+        self.win.addstr(11, 30, "                    ")
+        self.win.addstr(12, 30, "  0-9:Level q:Quit  ")
+        self.win.addstr(13, 30, "                    ")
+        key = self.win.getch()
+        if 49 <= key <= 57: # 1 to 9
+            self.win.erase()
+            self.win.nodelay(True)
+            self.start(level=key - 48)
+        elif key in [ord("q"), ord("Q")]:
+            exit()
 
     def init_tile(self):
         self.x = 4
@@ -105,22 +151,11 @@ class Game:
         self.move_tile(KEY_DOWN)
 
     def draw_matrix_border(self):
-        draw_box(
-            self.win,
-            X_AREA-1,
-            Y_AREA-1,
-            WIDTH*TILE_WIDTH+TILE_WIDTH,
-            HEIGHT
-        )
+        draw_box(self.win, X_AREA-1, Y_AREA-1,
+            WIDTH*TILE_WIDTH+TILE_WIDTH, HEIGHT)
 
     def draw_queue_border(self):
-        draw_box(
-            self.win,
-            53,
-            1,
-            12,
-            15
-        )
+        draw_box(self.win, 53, 1, 13, 15)
 
     def draw_matrix(self):
         for l in range(2, HEIGHT):
@@ -182,6 +217,15 @@ class Game:
             self.area.addstr(y, x*TILE_WIDTH, SQ,
                              colors.get_piece_color(self.tile["type"]))
 
+    def draw_queue(self):
+        for i in range(4):
+            tm = self.queue.get_tetrimino(i)
+            for part in tm["pos"]:
+                x = 1 + part[0]
+                y = 2 + (3 * i) + part[1]
+                self.queue_area.addstr(y, x*TILE_WIDTH + 2, SQ,
+                                       colors.get_piece_color(tm["type"]))
+
     def add_tile_to_matrix(self):
         for x, y in self.tile["pos"]:
             self.matrix[self.y + y][self.x + x] = self.tile["type"]
@@ -204,26 +248,31 @@ class Game:
             check = self.move_tile(KEY_DOWN)
             if check is False:
                 if self.y == 1:
-                    exit()
+                    self.game_state = GAME_OVER
                 else:
                     self.add_tile_to_matrix()
+                    self.draw_queue()
                     self.update_matrix()
                     self.init_tile()
-        self.win.addstr(2, 12, f"SCORE : {self.points}")
+        self.win.addstr(2, 12, f"SCORE : {self.points:07}")
         self.win.addstr(4, 12, f"LEVEL : {self.level}")
         self.win.addstr(5, 12, f"LINES : {self.lines}")
 
         self.area.erase()
+        self.queue_area.erase()
         self.draw_matrix()
         self.draw_tile()
+        self.draw_queue()
         self.area.refresh(
             2, 0, Y_AREA, X_AREA,
             HEIGHT+Y_AREA, WIDTH*TILE_WIDTH+X_AREA-1)
+        self.queue_area.refresh(
+            0, 0, 2, 54, 14, 64)
 
 
     def run(self):
         now = time.perf_counter()
-        while True:
+        while self.game_state == RUNNING:
             key = self.win.getch()
             if key != -1:
                 self.process(key)
@@ -235,11 +284,21 @@ class Game:
                 self.update()
             time.sleep(0.001)
 
+    def loop(self):
+        while True:
+            state = self.game_state
+            if state == START:
+                self.welcome()
+            elif state == RUNNING:
+                self.run()
+            elif state == GAME_OVER:
+                self.game_over()
+
 
 def main(win):
     setup(win)
     game = Game(win)
-    game.run()
+    game.loop()
 
 
 if __name__ == '__main__':
