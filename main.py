@@ -20,6 +20,8 @@ Y_AREA = 2
 WIDTH = 10
 HEIGHT = 22 # 20 plus 2 to spawn area
 SPEEDS = [100, 79, 62, 47, 36, 26, 19, 14, 9, 6]
+UP_LVL = [10, 25, 45, 70, 100, 135, 175, 220, 270]
+POINTS = [100, 300, 500, 800]
 
 def setup(win):
     global colors, MAX_COLS, MAX_LINES
@@ -30,19 +32,6 @@ def setup(win):
     curses.mousemask(1)
     win.bkgd(" ", colors.BLACK)
     win.nodelay(True)
-
-def get_piece():
-    types = [
-        {"type": "i", "pos": [[-1, 0], [0, 0], [1, 0], [2, 0]]},
-        {"type": "o", "pos": [[0, -1], [1, -1], [0, 0], [1, 0]]},
-        {"type": "t", "pos": [[0, -1], [-1, 0], [0, 0], [1, 0]]},
-        {"type": "s", "pos": [[-1, 0], [0, 0], [0, -1], [1, -1]]},
-        {"type": "z", "pos": [[-1, -1], [0, -1], [0, 0], [1, 0]]},
-        {"type": "j", "pos": [[-1, -1], [-1, 0], [0, 0], [1, 0]]},
-        {"type": "l", "pos": [[-1, 0], [0, 0], [1, 0], [1, -1]]}
-    ]
-    return random.choice(types)
-
 
 def draw_box(win, x, y, width, height):
     borders = "██▄▀"
@@ -57,6 +46,13 @@ def draw_box(win, x, y, width, height):
         win.addstr(y, x+c, borders[2])
         win.addstr(y+height-1, x+c, borders[3])
 
+def remove_lines(arr, lines):
+    new_arr = deepcopy(arr)
+    w = len(arr[0]) # array width
+    for l in sorted(lines)[::-1]: # lines in reversed order
+        new_arr.pop(l)
+    new_arr = [[0 for _ in range(w)] for _ in lines] + new_arr
+    return new_arr
 
 class Queue:
 
@@ -95,8 +91,9 @@ class Game:
         self.area.bkgd(" ", colors.GRAY)
         self.draw_matrix_border()
         self.draw_queue_border()
-        self.t = 0
-        self.level = 1
+        self.time = 0
+        self.points = 0
+        self.level = 5
         self.lines = 0
         self.matrix = [[0 for _ in range(WIDTH)] for _ in range(HEIGHT)]
         self.init_tile()
@@ -105,7 +102,6 @@ class Game:
         self.x = 4
         self.y = 1
         self.tile = self.queue.pop_tetrimino()
-        #self.tile = get_piece()
         self.move_tile(KEY_DOWN)
 
     def draw_matrix_border(self):
@@ -136,11 +132,11 @@ class Game:
 
 
     def process(self, key):
-        if key == ord("q"): # Quit
+        if key in [ord("q"), ord("Q")]: # Quit
             exit()
-        elif key == KEY_UP: # Hard drop
+        elif key == ord(" "): # Hard drop
             self.hard_drop()
-        elif key == ord(" "): # Rotate
+        elif key == KEY_UP: # Rotate
             self.rotate_tile()
         elif key in [KEY_DOWN, KEY_LEFT, KEY_RIGHT]:
             self.move_tile(key)
@@ -163,8 +159,10 @@ class Game:
         return True
 
     def hard_drop(self):
+        points = 0
         while self.move_tile(KEY_DOWN):
-            pass
+            points += 2
+        self.points += points
 
     def rotate_tile(self):
         for part in self.tile["pos"]:
@@ -185,22 +183,24 @@ class Game:
                              colors.get_piece_color(self.tile["type"]))
 
     def add_tile_to_matrix(self):
-        for part in self.tile["pos"]:
-            self.matrix[self.y + part[1]][self.x + part[0]] = self.tile["type"]
+        for x, y in self.tile["pos"]:
+            self.matrix[self.y + y][self.x + x] = self.tile["type"]
 
     def update_matrix(self):
-        for i, l in enumerate(self.matrix):
-            counts = [c for c in l if c != 0]
-            if len(counts) == 10: # Full line
-                self.matrix.pop(i)
-                self.lines += 1
-                self.level = int(self.lines/10)+1
-                zeros = [0 for _ in range(WIDTH)]
-                self.matrix = [zeros] + self.matrix
-                self.update_matrix()
+        to_remove = []
+        for i, line in enumerate(self.matrix):
+            counts = len([c for c in line if c != 0])
+            if counts == 10: # Full line
+                to_remove.append(i)
+        if len(to_remove) > 0:
+            self.points += POINTS[len(to_remove)] * self.level
+            self.matrix = remove_lines(self.matrix, to_remove)
+            self.lines += len(to_remove)
+            if self.lines >= UP_LVL[self.level - 1]:
+                self.level = min(self.level + 1, len(SPEEDS))
 
     def update(self):
-        if self.t % SPEEDS[self.level - 1] == 0:
+        if self.time % SPEEDS[self.level - 1] == 0:
             check = self.move_tile(KEY_DOWN)
             if check is False:
                 if self.y == 1:
@@ -209,9 +209,10 @@ class Game:
                     self.add_tile_to_matrix()
                     self.update_matrix()
                     self.init_tile()
-                    #self.level += 1
-                    #self.level = min(self.level, len(SPEEDS))
-        self.win.addstr(0, 32, f"LEVEL:{self.level}  LINES:{self.lines}")
+        self.win.addstr(2, 12, f"SCORE : {self.points}")
+        self.win.addstr(4, 12, f"LEVEL : {self.level}")
+        self.win.addstr(5, 12, f"LINES : {self.lines}")
+
         self.area.erase()
         self.draw_matrix()
         self.draw_tile()
@@ -230,7 +231,7 @@ class Game:
             tick = time.perf_counter()
             if tick - now > 1 / FREQ:
                 now = tick
-                self.t += 1
+                self.time += 1
                 self.update()
             time.sleep(0.001)
 
