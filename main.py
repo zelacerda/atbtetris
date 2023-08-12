@@ -103,7 +103,7 @@ class Game:
         self.win.addstr(10, 28, " Another Terminal-Based ")
         self.win.addstr(11, 28, "       Tetris Game      ")
         self.win.addstr(13, 28, "v0.9 (2023) by zelacerda")
-        self.win.addstr(15, 28, "    0-9:Level q:Quit    ")
+        self.win.addstr(15, 28, "    1-9:Level q:Quit    ")
         key = self.win.getch()
         if 49 <= key <= 57: # 1 to 9
             self.win.erase()
@@ -134,7 +134,7 @@ class Game:
         self.win.addstr( 9, 30, "                    ")
         self.win.addstr(10, 30, "     GAME OVER!     ")
         self.win.addstr(11, 30, "                    ")
-        self.win.addstr(12, 30, "  0-9:Level q:Quit  ")
+        self.win.addstr(12, 30, "  1-9:Level q:Quit  ")
         self.win.addstr(13, 30, "                    ")
         key = self.win.getch()
         if 49 <= key <= 57: # 1 to 9
