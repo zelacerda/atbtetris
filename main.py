@@ -95,6 +95,7 @@ class Game:
     def __init__(self, win):
         self.win = win
         self.game_state = START
+        self.high_score = 0
 
     def welcome(self):
         self.win.erase()
@@ -126,6 +127,9 @@ class Game:
         self.game_state = RUNNING
         self.level = level
         self.lines = 0
+        self.tetris = 0
+        self.clear = 0
+        self.t_rate = 0.0
         self.matrix = [[0 for _ in range(WIDTH)] for _ in range(HEIGHT)]
         self.init_tile()
 
@@ -198,6 +202,7 @@ class Game:
         while self.move_tile(KEY_DOWN):
             points += 2
         self.points += points
+        self.high_score = max(self.high_score, self.points)
 
     def rotate_tile(self):
         for part in self.tile["pos"]:
@@ -237,11 +242,18 @@ class Game:
             if counts == 10: # Full line
                 to_remove.append(i)
         if len(to_remove) > 0:
-            self.points += POINTS[len(to_remove) - 1] * self.level
+            self.update_stats(len(to_remove))
             self.matrix = remove_lines(self.matrix, to_remove)
-            self.lines += len(to_remove)
             if self.lines >= UP_LVL[self.level - 1]:
                 self.level = min(self.level + 1, len(SPEEDS))
+
+    def update_stats(self, n_lines):
+        self.points += POINTS[n_lines - 1] * self.level
+        self.high_score = max(self.high_score, self.points)
+        self.tetris += n_lines == 4
+        self.lines += n_lines
+        self.clear += 1
+        self.t_rate = (self.tetris / self.clear) * 100
 
     def update(self):
         if self.time % SPEEDS[self.level - 1] == 0:
@@ -255,8 +267,11 @@ class Game:
                     self.update_matrix()
                     self.init_tile()
         self.win.addstr(2, 12, f"SCORE : {self.points:07}")
-        self.win.addstr(4, 12, f"LEVEL : {self.level}")
-        self.win.addstr(5, 12, f"LINES : {self.lines}")
+        self.win.addstr(3, 12, f"BEST  : {self.high_score:07}")
+        self.win.addstr(7, 12, f"LEVEL  : {self.level}")
+        self.win.addstr(9, 12, f"LINES  : {self.lines}")
+        self.win.addstr(11, 12, f"TETRIS : {self.tetris}")
+        self.win.addstr(13, 12, f"RATE   : {int(self.t_rate)}% ")
 
         self.area.erase()
         self.queue_area.erase()
