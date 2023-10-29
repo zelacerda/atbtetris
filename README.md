@@ -31,5 +31,5 @@ docker run --rm -it zelacerda/atbtetris
 
 Feel free to use, modify and distribute!
 
-**version 0.9 - 2023 - by zelacerda**
+**version 1.0 - 2023 - by zelacerda**
 
