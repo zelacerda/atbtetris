@@ -12,23 +12,33 @@ ORANGE = 7
 GRAY = 8
 
 def init_colors():
-    # Original terminal colors
-    init_pair(CYAN, c.COLOR_CYAN, c.COLOR_CYAN)
-    init_pair(YELLOW, c.COLOR_YELLOW, c.COLOR_YELLOW)
-    init_pair(PURPLE, c.COLOR_MAGENTA, c.COLOR_MAGENTA)
-    init_pair(GREEN, c.COLOR_GREEN, c.COLOR_GREEN)
-    init_pair(RED, c.COLOR_RED, c.COLOR_RED)
-    init_pair(BLUE, c.COLOR_BLUE, c.COLOR_BLUE)
-
-    # Tries to change some colors. Brown for orange is too bad :P)
     if c.can_change_color():
-        c.init_color(8, 300, 300, 300)  # dark gray
-        c.init_color(19, 1000, 600, 0)   # light orange
+    # Change default terminal colors. Brown for orange is too bad :P)
+        new_colors = [
+            (1, 1000, 200, 200),   # red
+            (2, 200, 1000, 200),   # green
+            (3, 1000, 1000, 0),    # yellow
+            (4, 600, 600, 1000),   # blue
+            (5, 1000, 0, 1000),    # magenta
+            (6, 200, 1000, 1000),  # cyan
+            (7, 1000, 1000, 1000), # white
+            (8, 200, 200, 200),    # dark gray
+            (19, 1000, 600, 0)     # light orange
+        ]
+        for color in new_colors:
+            c.init_color(*color)
         gray = 8
         orange = 19
     else:
-        gray = c.COLOR_WHITE
+        gray = c.COLOR_BLACK
         orange = c.COLOR_YELLOW
+
+    init_pair(CYAN, c.COLOR_CYAN, c.COLOR_CYAN)
+    init_pair(PURPLE, c.COLOR_MAGENTA, c.COLOR_MAGENTA)
+    init_pair(GREEN, c.COLOR_GREEN, c.COLOR_GREEN)
+    init_pair(BLUE, c.COLOR_BLUE, c.COLOR_BLUE)
+    init_pair(RED, c.COLOR_RED, c.COLOR_RED)
+    init_pair(YELLOW, c.COLOR_YELLOW, c.COLOR_YELLOW)
     init_pair(GRAY, gray, gray)
     init_pair(ORANGE, orange, orange)
 
