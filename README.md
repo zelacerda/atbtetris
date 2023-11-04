@@ -1,5 +1,5 @@
 # atbtetris
-Another Terminal-Based Tetris Game
+**A**nother **T**erminal-**B**ased **Tetris** game.
 
 ## About this project
 
@@ -9,17 +9,18 @@ Another Terminal-Based Tetris Game
 
 ## How to play
 
-After the game start, fhe commands are:
+After the game start, the commands are:
 
 * **KEY LEFT-RIGHT**: move tile
 * **KEY DOWN**: soft drop
 * **KEY UP**: rotate tile clockwise
 * **SPACE**: hard drop
+* **p**: pause game
 * **q**: quit game
 
 ## Requirements
 
-Since **atbtetris** doesn't need any additional libraries, all you need to play is pure Python installed on your machine. I tested it with Python 3.11.4 on Linux, but it will probably work on other versions and operating systems.
+Since **atbtetris** doesn't need any additional libraries, all you need to play is pure Python installed on your machine. I tested it with Python 3.11.4 on MacOS and Linux, but it will probably work with other Python versions and on Windows.
 
 ## Docker version
 
