@@ -33,14 +33,14 @@ def init_colors():
         gray = c.COLOR_BLACK
         orange = c.COLOR_YELLOW
 
-    init_pair(CYAN, c.COLOR_CYAN, c.COLOR_CYAN)
-    init_pair(PURPLE, c.COLOR_MAGENTA, c.COLOR_MAGENTA)
-    init_pair(GREEN, c.COLOR_GREEN, c.COLOR_GREEN)
-    init_pair(BLUE, c.COLOR_BLUE, c.COLOR_BLUE)
-    init_pair(RED, c.COLOR_RED, c.COLOR_RED)
-    init_pair(YELLOW, c.COLOR_YELLOW, c.COLOR_YELLOW)
+    init_pair(CYAN, c.COLOR_CYAN, c.COLOR_BLACK)
+    init_pair(PURPLE, c.COLOR_MAGENTA, c.COLOR_BLACK)
+    init_pair(GREEN, c.COLOR_GREEN, c.COLOR_BLACK)
+    init_pair(BLUE, c.COLOR_BLUE, c.COLOR_BLACK)
+    init_pair(RED, c.COLOR_RED, c.COLOR_BLACK)
+    init_pair(YELLOW, c.COLOR_YELLOW, c.COLOR_BLACK)
     init_pair(GRAY, gray, gray)
-    init_pair(ORANGE, orange, orange)
+    init_pair(ORANGE, orange, c.COLOR_BLACK)
 
 class Colors:
     def __init__(self):
@@ -52,7 +52,7 @@ class Colors:
         self.GREEN = color_pair(GREEN) | c.A_BOLD | c.A_REVERSE
         self.RED = color_pair(RED) | c.A_BOLD | c.A_REVERSE
         self.BLUE = color_pair(BLUE) | c.A_BOLD | c.A_REVERSE
-        self.ORANGE = color_pair(ORANGE)
+        self.ORANGE = color_pair(ORANGE) | c.A_BOLD | c.A_REVERSE
         self.GRAY = color_pair(GRAY)
 
     def get_piece_color(self, p):

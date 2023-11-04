@@ -6,6 +6,9 @@ from copy import deepcopy
 from colors import Colors
 
 
+VERSION = "v1.0 (2023)"
+CREDIT = "by zelacerda"
+
 SQ = "  "
 TILE_WIDTH = 2
 KEY_DOWN, KEY_UP, KEY_LEFT, KEY_RIGHT = 258, 259, 260, 261
@@ -103,7 +106,7 @@ class Game:
         self.win.addstr( 8, 28, "        atbtetris       ")
         self.win.addstr(10, 28, " Another Terminal-Based ")
         self.win.addstr(11, 28, "       Tetris Game      ")
-        self.win.addstr(13, 28, "v0.9 (2023) by zelacerda")
+        self.win.addstr(13, 28, VERSION + " " + CREDIT)
         self.win.addstr(15, 28, "    1-9:Level q:Quit    ")
         key = self.win.getch()
         if 49 <= key <= 57: # 1 to 9
@@ -123,6 +126,7 @@ class Game:
         self.draw_matrix_border()
         self.draw_queue_border()
         self.time = 0
+        self.pause = False
         self.points = 0
         self.game_state = RUNNING
         self.level = level
@@ -131,6 +135,18 @@ class Game:
         self.clear = 0
         self.t_rate = 0.0
         self.matrix = [[0 for _ in range(WIDTH)] for _ in range(HEIGHT)]
+
+        self.win.addstr(15, 12, "⇧ : rotate")
+        self.win.addstr(16, 12, "⇦/⇨ : move")
+        self.win.addstr(17, 12, "⇩ : soft drop")
+        self.win.addstr(18, 12, "space : drop")
+        self.win.addstr(21, 12, "p : pause")
+        self.win.addstr(22, 12, "q : quit")
+
+        self.win.addstr(3, 54, "NEXT PIECES")
+        self.win.addstr(21, 55, "atbtetris")
+        self.win.addstr(22, 54, VERSION)
+
         self.init_tile()
 
     def game_over(self):
@@ -159,7 +175,7 @@ class Game:
             WIDTH*TILE_WIDTH+TILE_WIDTH, HEIGHT)
 
     def draw_queue_border(self):
-        draw_box(self.win, 53, 1, 13, 15)
+        draw_box(self.win, 53, 4, 13, 15)
 
     def draw_matrix(self):
         for l in range(2, HEIGHT):
@@ -173,11 +189,13 @@ class Game:
     def process(self, key):
         if key in [ord("q"), ord("Q")]: # Quit
             exit()
-        elif key == ord(" "): # Hard drop
+        elif key in [ord("p"), ord("P")]: # Toggle Pause
+            self.pause = not(self.pause)
+        elif key == ord(" ") and not self.pause: # Hard drop
             self.hard_drop()
-        elif key == KEY_UP: # Rotate
+        elif key == KEY_UP and not self.pause: # Rotate
             self.rotate_tile()
-        elif key in [KEY_DOWN, KEY_LEFT, KEY_RIGHT]:
+        elif key in [KEY_DOWN, KEY_LEFT, KEY_RIGHT] and not self.pause:
             self.move_tile(key)
 
     def check_new_pos(self, x, y):
@@ -268,10 +286,10 @@ class Game:
                     self.init_tile()
         self.win.addstr(2, 12, f"SCORE : {self.points:07}")
         self.win.addstr(3, 12, f"BEST  : {self.high_score:07}")
-        self.win.addstr(7, 12, f"LEVEL  : {self.level}")
-        self.win.addstr(9, 12, f"LINES  : {self.lines}")
-        self.win.addstr(11, 12, f"TETRIS : {self.tetris}")
-        self.win.addstr(13, 12, f"RATE   : {int(self.t_rate)}% ")
+        self.win.addstr(6, 12, f"LEVEL  : {self.level}")
+        self.win.addstr(8, 12, f"LINES  : {self.lines}")
+        self.win.addstr(10, 12, f"TETRIS : {self.tetris}")
+        self.win.addstr(12, 12, f"RATE   : {int(self.t_rate)}% ")
 
         self.area.erase()
         self.queue_area.erase()
@@ -282,7 +300,7 @@ class Game:
             2, 0, Y_AREA, X_AREA,
             HEIGHT+Y_AREA, WIDTH*TILE_WIDTH+X_AREA-1)
         self.queue_area.refresh(
-            0, 0, 2, 54, 14, 64)
+            0, 0, 5, 54, 17, 64)
 
 
     def run(self):
@@ -293,7 +311,7 @@ class Game:
                 self.process(key)
 
             tick = time.perf_counter()
-            if tick - now > 1 / FREQ:
+            if tick - now > 1 / FREQ and not self.pause:
                 now = tick
                 self.time += 1
                 self.update()
